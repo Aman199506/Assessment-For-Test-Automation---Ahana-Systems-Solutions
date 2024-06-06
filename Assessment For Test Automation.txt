@@ -1,0 +1,110 @@
+The test case written in Java using Selenium WebDriver for automating the process of navigating to the Douglas website, handling the cookie consent, clicking on "Parfum", and listing products based on specific filters. 
+This example includes data-driven tests using TestNG for the filters.
+
+Test Case: Navigate to Douglas.de and List Products Based on Filters
+
+Pre-requisites:
+
+Java Development Kit (JDK) installed.
+Selenium WebDriver and TestNG libraries added to the project.
+Internet connection.
+A WebDriver binary (e.g., ChromeDriver) available in the system PATH.
+
+Steps:
+Navigate to https://www.douglas.de/de
+Open the web browser.
+Navigate to the URL: https://www.douglas.de/de.
+Handle the cookie consent
+
+Locate the cookie consent banner.
+Click the button to accept or handle the cookies.
+Click on "Parfum"
+
+Find the "Parfum" link or button on the homepage.
+Click on "Parfum".
+List the products based on filters
+
+Apply the filters: Criteria (Highlights), Marke, Produktart, Geschenk für, Für Wen.
+List the products displayed after applying each filter.
+
+
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+public class DouglasTest {
+
+    WebDriver driver;
+    WebDriverWait wait;
+
+    @BeforeClass
+    public void setUp() {
+        System.setProperty("webdriver.chrome.driver", "path/to/chromedriver");
+        driver = new ChromeDriver();
+        wait = new WebDriverWait(driver, 10);
+        driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+        driver.get("https://www.douglas.de/de");
+    }
+
+    @Test(priority = 1)
+    public void handleCookieConsent() {
+        WebElement cookieConsentButton = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//button[contains(text(),'Zustimmen')]")));
+        cookieConsentButton.click();
+    }
+
+    @Test(priority = 2)
+    public void navigateToParfum() {
+        WebElement parfumLink = wait.until(ExpectedConditions.elementToBeClickable(By.linkText("Parfum")));
+        parfumLink.click();
+    }
+
+    @Test(priority = 3, dataProvider = "filterData")
+    public void applyFilters(String criteria, String marke, String produktart, String geschenkFur, String furWen) {
+        applyFilter(criteria, "//span[text()='%s']/ancestor::label");
+        applyFilter(marke, "//span[text()='%s']/ancestor::label");
+        applyFilter(produktart, "//span[text()='%s']/ancestor::label");
+        applyFilter(geschenkFur, "//span[text()='%s']/ancestor::label");
+        applyFilter(furWen, "//span[text()='%s']/ancestor::label");
+
+        List<WebElement> products = driver.findElements(By.cssSelector(".product"));
+        System.out.println("Products count: " + products.size());
+        for (WebElement product : products) {
+            System.out.println(product.getText());
+        }
+    }
+
+    private void applyFilter(String filterValue, String xpathPattern) {
+        if (filterValue != null && !filterValue.isEmpty()) {
+            String xpath = String.format(xpathPattern, filterValue);
+            WebElement filterElement = wait.until(ExpectedConditions.elementToBeClickable(By.xpath(xpath)));
+            filterElement.click();
+        }
+    }
+
+    @DataProvider(name = "filterData")
+    public Object[][] filterData() {
+        return new Object[][] {
+                {"Sale", "Brand1", "Type1", "Occasion1", "Men"},
+                {"Neu", "Brand2", "Type2", "Occasion2", "Women"},
+                {"Limitiert", "Brand3", "Type3", "Occasion3", "Unisex"}
+        };
+    }
+
+    @AfterClass
+    public void tearDown() {
+        if (driver != null) {
+            driver.quit();
+        }
+    }
+}
